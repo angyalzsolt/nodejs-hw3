@@ -164,6 +164,7 @@ app.formResponseProcessor = (formId, requestPayload, responsePayload)=>{
 		};
 
 		app.client.request(undefined,'api/tokens','POST',undefined,newPayload,function(newStatusCode,newResponsePayload){
+			console.log('formresponesprocessor', newResponsePayload);
 			// Display an error on the form if needed
 			if(newStatusCode !== 200){
 				// Set the formError field with the error text
@@ -172,8 +173,8 @@ app.formResponseProcessor = (formId, requestPayload, responsePayload)=>{
 				document.querySelector("#"+formId+" .formError").style.display = 'block';
 			} else {
 				// If successful, set the token and redirect the user
-			app.setSessionToken(newResponsePayload);
-			window.location = '/';
+				app.setSessionToken(newResponsePayload);
+				window.location = '/';
 			}
 		});
 	}
@@ -182,12 +183,12 @@ app.formResponseProcessor = (formId, requestPayload, responsePayload)=>{
 		app.setSessionToken(responsePayload);
 		window.location = '/';
 	};
-	// if success, show message
+	// if account edited successfully, show message
 	if(formId === 'accountEdit'){
 		document.querySelector('#'+formId+' .formSuccess').style.display = 'block';
 	}
 
-	// if success, show message
+	// if payment was successfull, show message
 	if(formId === 'payment'){
 		document.querySelector('#'+formId+' .formSuccess').style.display = 'block';
 		let email = typeof(app.config.sessionToken.email) === 'string' ? app.config.sessionToken.email : false;
@@ -215,7 +216,7 @@ app.logUserOut = (redirectUser)=>{
 
 	// Get the current token id
 	let tokenId = typeof(app.config.sessionToken.id) === 'string' ? app.config.sessionToken.id : false;
-	
+
 	// Send the current token to the tokens endpoint to delete it
 	let queryStringObject = {
 		'id': tokenId
@@ -233,20 +234,20 @@ app.logUserOut = (redirectUser)=>{
 // Get the session token from localstorage and set it in the app.config object
 app.getSessionToken = function(){
   let tokenString = localStorage.getItem('token');
-  if(typeof(tokenString) == 'string'){
+  if(typeof(tokenString) === 'string'){
     try{
-      let token = JSON.parse(tokenString);
-      app.config.sessionToken = token;
-      if(typeof(token) == 'object'){
-        app.setLoggedInClass(true);
-        console.log('You\'re logged in');
-      } else {
-      	console.log('You\'re logged out!');
-        app.setLoggedInClass(false);
-      }
+    	let token = JSON.parse(tokenString);
+    	app.config.sessionToken = token;
+    	if(typeof(token) == 'object'){
+    	  app.setLoggedInClass(true);
+    	  console.log('You\'re logged in');
+    	} else {
+    		console.log('You\'re logged out!');
+    	  app.setLoggedInClass(false);
+    	}
     }catch(e){
-      app.config.sessionToken = false;
-      app.setLoggedInClass(false);
+    	app.config.sessionToken = false;
+    	app.setLoggedInClass(false);
     }
   }
 };
@@ -292,16 +293,16 @@ app.renewToken = (callback)=>{
 				let queryStringObject = {'id': currentToken.id};
 				app.client.request(undefined, 'api/tokens', 'GET', queryStringObject, undefined, (statusCode, responsePayload)=>{
 					// Display an error on te form if needed
-					if(statusCode === 200){
+					if(statusCode === 200 || statusCode === 102){
 						app.setSessionToken(responsePayload);
 						callback(false);
 					} else {
-						app.sessionToken(false);
+						app.setSessionToken(false);
 						callback(true);
 					}
 				});
 			} else {
-				app.sessionToken(false);
+				app.setSessionToken(false);
 				callback(true);
 			}
 		});
@@ -470,7 +471,7 @@ const clearItem = (email, success)=>{
 				document.querySelector('#paymentForm').style.display = 'none';
 			} else {
 				document.querySelector('#sc_target').innerHTML = '<h2>Your shoppingcart is empty</h2>';
-			document.querySelector('#paymentForm').style.display = 'none';
+				document.querySelector('#paymentForm').style.display = 'none';
 			}
 			
 		} else {
